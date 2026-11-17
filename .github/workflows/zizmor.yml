@@ -1,0 +1,39 @@
+# Organization-wide GitHub Actions security check.
+#
+# An organization ruleset can require this workflow on every repository's
+# default branch. It audits the repository the pull request belongs to (its
+# workflows, composite actions, and Dependabot configuration) and fails on
+# zizmor findings. A repository's own zizmor.yml or .github/zizmor.yml is
+# honored. A repository with nothing to audit passes.
+name: zizmor
+
+on:
+  pull_request:
+  merge_group:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  zizmor:
+    name: zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          version: 1.32.0
+          advanced-security: false
+          annotations: true
+          fail-on-no-inputs: false
